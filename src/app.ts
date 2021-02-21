@@ -16,20 +16,49 @@ app.use(morgan((tokens, req: Request, res: Response) => {
 }, { stream: outStream }));
 let http = require("http").Server(app);
 const io = require("socket.io")(http);
-app.listen(PORT, () => {
-    logger.info(`App listening on port: ${PORT}`);
-});
-io.on("connection", (socket: any) => {
-    logger.info("a user connected");
-    // whenever we receive a 'message' we log it out
-    socket.on("message", (message: any) => {
-        logger.info(message);
-        socket.emit('event', {some: "data"});
+io.on('connection', (socket: any) => {
+    logger.info('A user connected');
+    socket.send('Hello!');
+    socket.emit('greetings', 'Hey!', { 'ms': 'jane' }, Buffer.from([4, 3, 3, 1]));
+
+    // Whenever someone disconnects this piece of code executed
+    socket.on('disconnect', () => {
+        logger.info('A user disconnected');
     });
 
 });
 app.get('/', (req, res) => {
-    return res.send("Hello sockets");
+    res.send(`<!DOCTYPE html>
+    <html>
+       <head>
+          <title>Hello world</title>
+       </head>
+       <script src = "/socket.io/socket.io.js"></script>
+
+       <script>
+          const socket = io();
+          socket.on("connect", function() {
+             console.log("connected");
+         });
+         socket.on("message", function(data) {
+             // Log the data I received
+             console.log(data);
+             // Send a message to the server
+         });
+         socket.on("greetings", function(data) {
+             // Log the data I received
+             console.log("greetings",data);
+             // Send a message to the server
+         });
+         socket.on("disconnect", function(data) {
+             // Log the data I received
+             console.log(data);
+             // Send a message to the server
+             console.log("disconnect");
+         });
+       </script>
+       <body>Hello</body>
+    </html>`);
 });
 
 http = http.listen(3000, () => {
